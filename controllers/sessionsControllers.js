@@ -1,12 +1,15 @@
-const sessionData = require("../data/sessions");
-const siteData = require("../data/siteData");
-const clients = require("../data/clients")
+// const sessionData = require("../data/sessions");
+// const siteData = require("../data/siteData");
+// const clients = require("../data/clients")
 
-const getAllSessions = (req, res, next) => {
-    const sessions = sessionData.todaysSessions;
+const Session = require("../models/sessionModel");
+const Client = require("../models/clientModel");
 
+const getAllSessions = async (req, res, next) => {
     try {
-        res.status(200).json({
+        const sessions = await Session.find();
+
+        return res.status(200).json({
             success: {
                 message: "This route points to the Todays Sessions page with all of the sessions from the current day."
             },
@@ -24,21 +27,28 @@ const getAllSessions = (req, res, next) => {
 const getClientSessions = async (req, res, next) => {
     const { _id } = req.params;
 
-    const foundClient = clients.find((client) => 
-        client._id === _id);
-
     try {
+        if (!_id) {
+            throw new Error("Id is required");
+        }
+
+        const client = Client.findById(_id);
+
+        if (!client) {
+            throw new Error("Client not found");
+        }
+
         return res.status(200).json({
             success: {
-                message: "This route points to a specific client session by the session ID."
+                message: "Successfully retrieved client"
             },
-            data: {client: foundClient},
+            data: {client: client},
             statusCode: 200
         });
     } catch (error) {
         return res.status(400).json({
             error: {
-                message: "Session not found. Search again."
+                message: "Not found. Search again."
             },
             statusCode: 400
         })
@@ -46,35 +56,35 @@ const getClientSessions = async (req, res, next) => {
 }
 
 const createSession = async (req, res, next) => {
-    const { date, machineType, client, phoneNumber, settings, startingTemp, endingTemp } = req.body;
-
-    const newSession = {
-        date,
-        machineType,
-        client,
-        phoneNumber,
-        settings,
-        startingTemp,
-        endingTemp
-    }
+    const { date, machineType, clientId, settings, startingTemp, endingTemp, status } = req.body;
 
     try {
-        sessionData.todaysSessions.push(newSession);
+        if (!date || !settings || !startingTemp || !endingTemp) {
+            throw new Error("Missing required fields, please review.")
+        }
+
+        const newSession = new Session({
+            date,
+            machineType,
+            clientId,
+            settings,
+            startingTemp,
+            endingTemp,
+            status
+        })
 
         return res.status(201).json({
             success: {
                 message: "A new session is created."
             },
-            data: { newSession }
+            data: { newSession },
+            statusCode: 201
         });
     } catch (error) {
-        return res.status(400).json({
-            error: {
-                message: "There is an error when adding a session."
-            }
-        })
-    }
+        return next(error);
+        }
 }
+
 
 const archiveSessions = async (req, res, next) => {
   const dayOfWeek = siteData.dayOfWeek;
