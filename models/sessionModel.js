@@ -15,17 +15,6 @@ const sessionSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Client"
     },
-    // client: {
-    //     type: String,
-    //     required: true
-    // },
-    // phoneNumber: {
-    //     type: String,
-    //     required: true,
-    //     trim: true,
-    //     minLength: 10,
-    //     maxLength: 10
-    // },
     settings: {
         type: String,
         required: true,
@@ -43,6 +32,10 @@ const sessionSchema = new Schema({
     },
     status: {
         type: String
+    },
+    isArchived: {
+        type: Boolean,
+        default: false
     }
 });
 

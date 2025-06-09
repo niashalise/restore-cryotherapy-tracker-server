@@ -6,6 +6,8 @@ const { getAllSessions, getClientSessions, createSession, archiveSessions, getSe
 router.get("/todays-sessions", getAllSessions);
 router.get("/client-sessions", getClientSessions);
 router.post("/create/new", createSession);
+router.get("/saved-sessions", archiveSessions);
+router.get("/previous-sessions", getSessionByDate);
 
 
 module.exports = router;
