@@ -1,6 +1,6 @@
-require("dotenv").config(); //summon the dotenv library
-require("./config/connection"); //use the connection to the database
-require("./config/authStrategy"); //use the authentication
+require("dotenv").config(); 
+require("./config/connection");
+require("./config/authStrategy");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -10,7 +10,6 @@ const path = require("node:path");
 const session = require("express-session");
 const passport = require("passport");
 
-//Define route variables
 const authRoutes = require("./routes/authRouter");
 const sessionRoutes = require("./routes/sessionsRouter");
 const contactRoutes = require("./routes/contactRouter");
@@ -19,7 +18,7 @@ const app = express();
 const PORT = process.env.PORT || "8080";
 
 app.use(helmet());
-app.use(cors({ credentials: true, origin: true }));
+app.use(cors());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -41,20 +40,15 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use("/auth", authRoutes); // http://localhost:8080/auth
-app.use("/api/sessions", sessionRoutes); // http://localhost:8080/api/sessions
-app.use("/api/inquiry", contactRoutes); // http://localhost:8080/api/inquiry
+app.use("/auth", authRoutes); 
+app.use("/api/sessions", sessionRoutes); 
+app.use("/api/inquiry", contactRoutes); 
 
-
-// Error handling middleware
 app.use((err, req, res, next) => {
   const authErrStatus = err.status || 400;
   const serverErrStatus = err.status || 500;
 
-  //11000 = duplicate user, doc does not have a value for the indexed field, or wrong syntax used
   let condition = err.code === 11000;
-
-  console.log(condition);
 
   if (condition) {
     return res.status(authErrStatus).json({
@@ -81,5 +75,5 @@ app.get("/", (req, res, next) => {
 app.listen(PORT, () => {
   console.log(
     `Restore Cryotherapy Tracker server is listening on port http://localhost:${PORT}.`
-  ); // http://localhost:8080
+  );
 });

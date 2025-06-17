@@ -3,6 +3,7 @@
 // const clients = require("../data/clients")
 
 const Session = require("../models/sessionModel");
+const Client = require("../models/clientModel");
 
 const getAllSessions = async (req, res, next) => {
   try {
@@ -16,23 +17,19 @@ const getAllSessions = async (req, res, next) => {
       data: { sessions },
     });
   } catch (error) {
-    res.status(400).json({
-      error: {
-        message: "Session details not found. Try again.",
-      },
-    });
+    return next(error);
   }
 };
 
 const getClientSessions = async (req, res, next) => {
-  const { _id } = req.params;
+  const { phone } = req.query;
 
   try {
-    if (!_id) {
+    if (!phone) {
       throw new Error("Id is required");
     }
 
-    const sessions = await Session.find({ clientId: _id });
+    const sessions = await Session.find({ phone: phone });
 
     if (!sessions) {
       throw new Error("Client not found");
@@ -46,14 +43,62 @@ const getClientSessions = async (req, res, next) => {
       statusCode: 200,
     });
   } catch (error) {
-    return next(error)
+    return next(error);
+  }
+};
+
+const createClient = async (req, res, next) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    dob,
+    gender,
+    address,
+    city,
+    state,
+    zipCode,
+  } = req.body;
+
+  try {
+    if (!firstName || !lastName || !email || !dob || !phone || !dob) {
+      throw new Error("Missing required fields, please review.");
+    }
+
+    const newClient = new Client({
+      firstName,
+      lastName,
+      email,
+      phone,
+      dob,
+      gender,
+      address,
+      city,
+      state,
+      zipCode,
+    });
+
+    await newClient.save();
+
+    return res.status(201).json({
+      success: {
+        message: "New client added.",
+      },
+      data: { newClient },
+      statusCode: 201,
+    });
+  } catch (error) {
+    return next(error);
   }
 };
 
 const createSession = async (req, res, next) => {
   const {
     date,
-    machineType,
+    machine,
+    name,
+    phone,
     clientId,
     settings,
     startingTemp,
@@ -62,19 +107,23 @@ const createSession = async (req, res, next) => {
   } = req.body;
 
   try {
-    if (!date || !settings || !startingTemp || !endingTemp) {
+    if (!date || !name || !phone || !settings || !startingTemp || !endingTemp) {
       throw new Error("Missing required fields, please review.");
     }
 
     const newSession = new Session({
       date,
-      machineType,
+      machine,
+      name,
+      phone,
       clientId,
       settings,
       startingTemp,
       endingTemp,
       status,
     });
+
+    await newSession.save();
 
     return res.status(201).json({
       success: {
@@ -88,32 +137,20 @@ const createSession = async (req, res, next) => {
   }
 };
 
-const archiveSessions = async (req, res, next) => {
-  try {
-    const sessions = await Session.updateMany(
-      { isArchived: false },
-      { $set: { isArchived: true } }
-    );
-    res.status(201).json({
-      message: "Sessions have been archived.",
-      sessionsCount: sessions.modifiedCount,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
 const getSessionByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
     const [year, month, day] = date.split("-").map(Number);
     const startDate = new Date(year, month - 1, day, 0, 0, 0);
     const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    console.log("Start date: ", startDate);
+    console.log("End date: ", endDate);
     const sessions = await Session.find({
       date: { $gte: startDate, $lte: endDate },
     });
     res.status(200).json({
-      message: "Retrieved sessions.",
+      success: { message: "Retrieved sessions." },
       data: { sessions },
     });
   } catch (error) {
@@ -121,10 +158,26 @@ const getSessionByDate = async (req, res, next) => {
   }
 };
 
+const getClientByPhoneNumber = async (req, res, next) => {
+    const { phone } = req.query;
+    try {
+        const foundClient = await Client.find({ phone });
+
+        res.status(200).json({
+            success: { message: "Found client."},
+            data: { foundClient },
+            statusCode: 200
+        })
+    } catch (error) {
+        return next(error)
+    }
+}
+
 module.exports = {
   getAllSessions,
   getClientSessions,
   createSession,
-  archiveSessions,
   getSessionByDate,
+  createClient,
+  getClientByPhoneNumber
 };

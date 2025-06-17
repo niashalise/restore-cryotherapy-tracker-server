@@ -5,12 +5,10 @@ const User = require("../models/userModel");
 
 
 const signup = async (req, res, next) => {
-  //firstName, lastName, username, password <-- req.body
+  console.log("Req.body: ", req.body);
   const { storeName, email, password } = req.body;
 
-  if (error) {
-    return next(error);
-  } else if (!storeName || !email || !password) {
+  if (!storeName || !email || !password) {
     return res.status(400).json({
       error: { message: "Missing required fields." },
       statusCode: 400
@@ -21,12 +19,12 @@ const signup = async (req, res, next) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const newUser = {
+    const newUser = new User ({
       storeName: storeName,
       email: email,
       password: hashedPassword,
       googleId: ""
-    };
+    });
     
     await newUser.save();
 
@@ -40,7 +38,7 @@ const signup = async (req, res, next) => {
 
     return res.status(201).json({
       success: { message: "User is created." },
-      data: { newUser },
+      data: { user: newUser },
       statusCode: 201,
     });
   } catch (error) {
@@ -79,8 +77,8 @@ const localLogin = async (req, res, next) => {
         data: { user: userCopy },
         statusCode: 200
       });
-    })
-  })
+    }) 
+  }) (req, res, next)
 };
 
 const logout = async (req, res, next) => {
