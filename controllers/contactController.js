@@ -10,7 +10,7 @@ const inquiry = async (req, res, next) => {
         const newInquiry = new Contact({
             inquiry,
             name, 
-            studio,
+            tenantId,
             message
         });
 
