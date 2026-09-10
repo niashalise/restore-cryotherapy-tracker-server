@@ -36,6 +36,12 @@ const sessionSchema = new Schema({
     isArchived: {
         type: Boolean,
         default: false
+    },
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      index: true,
+      ref: "Tenant"
     }
 });
 
