@@ -3,7 +3,7 @@ const Contact = require("../models/contactModel");
 const inquiry = async (req, res, next) => {
     const { inquiry, name, tenantId, message } = req.body;
     try {
-        if (!inquiry || !tenantId || !message) {
+        if (!inquiry || !message) {
             throw new Error("Missing required fields, please review.")
         }
 

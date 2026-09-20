@@ -20,7 +20,7 @@ const userSchema = new Schema({
     trim: true,
     minLength: 8,
   },
-  tenantId: {
+  tenantId: { //added because this serves as the login acct for a location
     type: ObjectId,
     required: true,
     index: true,
