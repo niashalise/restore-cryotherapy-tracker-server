@@ -37,7 +37,7 @@ const sessionSchema = new Schema({
         type: Boolean,
         default: false
     },
-    tenantId: {
+    tenantId: { //
       type: Schema.Types.ObjectId,
       required: true,
       index: true,

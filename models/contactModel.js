@@ -12,10 +12,9 @@ const contactSchema = new Schema({
     type: String,
     trim: true,
   },
-  tenantId: {
+  tenantId: { //storing contact-form submissions/inquiries to a specific location
     type: Schema.Types.ObjectId,
-    required: true,
-    index: true,
+    index: false,
     ref: "Tenant",
   },
   message: {

@@ -13,6 +13,7 @@ const passport = require("passport");
 const authRoutes = require("./routes/authRouter");
 const sessionRoutes = require("./routes/sessionsRouter");
 const contactRoutes = require("./routes/contactRouter");
+const resolveTenant = require("./middleware/resolveTenant");
 
 const app = express();
 const PORT = process.env.PORT || "8080";
@@ -22,6 +23,7 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(resolveTenant);
 
 app.use(
     session({
@@ -44,6 +46,13 @@ app.use("/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes); 
 app.use("/api/inquiry", contactRoutes); 
 
+app.get("/", (req, res, next) => {
+  res.status(200).json({
+    success: { message: "This page points to the home page." },
+    statusCode: 200,
+  });
+});
+
 app.use((err, req, res, next) => {
   const authErrStatus = err.status || 400;
   const serverErrStatus = err.status || 500;
@@ -62,13 +71,6 @@ app.use((err, req, res, next) => {
   return res.status(serverErrStatus).json({
     error: { message: err.message || "Internal server error, oh no!" },
     statusCode: serverErrStatus,
-  });
-});
-
-app.get("/", (req, res, next) => {
-  res.status(200).json({
-    success: { message: "This page points to the home page." },
-    statusCode: 200,
   });
 });
 
