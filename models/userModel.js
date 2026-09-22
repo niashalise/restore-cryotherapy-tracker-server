@@ -21,7 +21,7 @@ const userSchema = new Schema({
     minLength: 8,
   },
   tenantId: { //added because this serves as the login acct for a location
-    type: ObjectId,
+    type: Schema.Types.ObjectId,
     required: true,
     index: true,
     ref: "Tenant"
