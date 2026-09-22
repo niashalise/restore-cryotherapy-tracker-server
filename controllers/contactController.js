@@ -26,24 +26,6 @@ const inquiry = async (req, res, next) => {
     } catch (error) {
         return next(error);
     }
-
-    const newInquiry = new Contact({
-      inquiry,
-      name,
-      tenantId,
-      message,
-    });
-
-    await newInquiry.save();
-
-    res.status(201).json({
-      success: { message: "A new inquiry has been received." },
-      data: { newInquiry },
-      statusCode: 201,
-    });
-  } catch (error) {
-    return next(error);
-  }
 };
 
 const getInquiries = async (req, res, next) => {

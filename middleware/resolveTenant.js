@@ -1,12 +1,14 @@
 const Tenant = require("../models/tenantModel");
+const baseDomain = process.env.BASE_DOMAIN;
+const baseDomainParts = baseDomain.split(".");
 
 const resolveTenant = async (req, res, next) => {
     try {
         const hostname = req.hostname;
 
     const domainParts = hostname.split(".")
-
-    if (domainParts.length < 3) { //checking if there is a subdomain or not; 2 pieces = no subdomain; 3 or more = subdomain
+    // we want the "does this hostname have a subdomain" check to work correctly no matter what the base domain is
+    if (domainParts.length <= baseDomainParts.length) { //checking if there is a subdomain or not; if domainParts has no more pieces than baseDomainParts, there is no subdomain
         return res.status(400).json({
             error: { message: "No location specified." },
             statusCode: 400
