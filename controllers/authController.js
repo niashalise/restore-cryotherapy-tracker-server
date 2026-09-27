@@ -2,6 +2,7 @@
 const passport = require("passport");
 const bcrypt = require("bcrypt")
 const User = require("../models/userModel");
+const jwt = require("jsonwebtoken");
 
 
 const signup = async (req, res, next) => {
@@ -21,35 +22,26 @@ const signup = async (req, res, next) => {
 
     const newUser = new User ({
       storeName: storeName,
+      tenantId: req.tenant._id,
       email: email,
       password: hashedPassword,
       googleId: ""
     });
     
     await newUser.save();
-
-    req.login(newUser, (error) => {
-      if (error) {
-        return next(error);
-      }
-    })
-
     newUser.password = undefined;
+
+    const payload = { tenantId: req.tenant._id, userId: newUser._id};
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     return res.status(201).json({
       success: { message: "User is created." },
-      data: { user: newUser },
+      data: { user: newUser, token },
       statusCode: 201,
     });
   } catch (error) {
     return next(error)
   }
-};
-
-const login = async (req, res, next) => {
-  res.status(200).json({
-    success: { message: "Login was successful." },
-  });
 };
 
 const localLogin = async (req, res, next) => {
@@ -64,41 +56,29 @@ const localLogin = async (req, res, next) => {
       })
     }
 
-    req.login(user, (err) => {
-      if (err) {
-        return next(err);
-      }
+    const userCopy = { ...user._doc };
+    userCopy.password = undefined;
 
-      const userCopy = { ...req.user._doc };
-      userCopy.password = undefined;
+    //data claims encoded inside the token
+    const payload = {tenantId: req.tenant._id, userId: user._id};
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1d"}); 
 
-      res.status(200).json({
-        success: { message: "Login successful within local authentication feature." },
-        data: { user: userCopy },
-        statusCode: 200
-      });
-    }) 
+    res.status(200).json({
+      success: {
+        message: "Login successful within local authentication feature.",
+      },
+      data: { user: userCopy, token }, //replaces login via a cookie with a token instead
+      statusCode: 200,
+    });
   }) (req, res, next)
 };
 
 const logout = async (req, res, next) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-
-    req.session.destroy((err) => {
-      if (err) {
-        return next(err);
-      }
-    })
-
-    res.clearCookie("connect.sid");
     return res.status(200).json({
       success: { message: "User logged out." },
       statusCode: 200
     })
-  })
+
 };
 
-module.exports = { signup, login, localLogin, logout };
+module.exports = { signup, localLogin, logout };

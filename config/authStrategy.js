@@ -6,9 +6,10 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/userModel");
 
 passport.use(
-    new LocalStrategy ({usernameField: "email"}, async (email, password, done) => {
+    //with passReqToCallback there is now a path to the tenant information; without this, there is no way to read req.tenant
+    new LocalStrategy ({usernameField: "email", passReqToCallback: true}, async (req, email, password, done) => {
         try {
-            const user = await User.findOne({ email });
+            const user = await User.findOne({ email, tenantId: req.tenant._id }); 
 
             if (!user) {
                 return done(null, false, {
@@ -30,20 +31,6 @@ passport.use(
         }
     })
 )
-
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-});
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-
-        done(null, user);
-    } catch (error) {
-        done(error);
-    }
-});
 
 passport.use(
     new GoogleStrategy({

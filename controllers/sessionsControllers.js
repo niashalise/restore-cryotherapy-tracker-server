@@ -1,13 +1,19 @@
-// const sessionData = require("../data/sessions");
-// const siteData = require("../data/siteData");
-// const clients = require("../data/clients")
-
 const Session = require("../models/sessionModel");
 const Client = require("../models/clientModel");
 
 const getAllSessions = async (req, res, next) => {
   try {
-    const sessions = await Session.find();
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
+
+    const startDate = new Date(year, month, day, 0, 0, 0);
+    const endDate = new Date(year, month, day, 23, 59, 59, 999);
+    const sessions = await Session.find({
+      tenantId: req.tenant._id,
+      date: { $gte: startDate, $lte: endDate },
+    }); //
 
     return res.status(200).json({
       success: {
@@ -29,7 +35,7 @@ const getClientSessions = async (req, res, next) => {
       throw new Error("Id is required");
     }
 
-    const sessions = await Session.find({ phone: phone });
+    const sessions = await Session.find({ phone }); 
 
     if (!sessions) {
       throw new Error("Client not found");
@@ -121,6 +127,7 @@ const createSession = async (req, res, next) => {
       startingTemp,
       endingTemp,
       status,
+      tenantId: req.tenant._id
     });
 
     await newSession.save();
@@ -139,7 +146,11 @@ const createSession = async (req, res, next) => {
 
 const getSessionByDate = async (req, res, next) => {
   try {
-    const { date } = req.query;
+    const { date, phone } = req.query;
+    if (!date || !phone ) {
+      throw new Error("Phone number or date is missing.");
+    };
+
     const [year, month, day] = date.split("-").map(Number);
     const startDate = new Date(year, month - 1, day, 0, 0, 0);
     const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
@@ -148,6 +159,7 @@ const getSessionByDate = async (req, res, next) => {
     console.log("End date: ", endDate);
     const sessions = await Session.find({
       date: { $gte: startDate, $lte: endDate },
+      phone
     });
     res.status(200).json({
       success: { message: "Retrieved sessions." },
