@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const verifyToken = require("../middleware/verifyToken");
+// this will apply to routes that require someone to be logged in
+router.use(verifyToken);
 
 const { getAllSessions, getClientSessions, createSession, getSessionByDate, createClient, getClientByPhoneNumber } = require("../controllers/sessionsControllers");
 

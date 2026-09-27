@@ -1,6 +1,5 @@
 const express = require("express");
 const {
-  login,
   localLogin,
   logout,
   signup,
@@ -10,7 +9,6 @@ const passport = require("passport");
 
 
 router.post("/signup", signup);
-router.get("/login", login);
 router.post("/login/local", localLogin);
 router.get("/login/error", (req, res, next) => {
   res.json("login error");

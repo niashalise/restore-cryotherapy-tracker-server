@@ -7,7 +7,6 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("node:path");
 
-const session = require("express-session");
 const passport = require("passport");
 
 const authRoutes = require("./routes/authRouter");
@@ -25,22 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(resolveTenant);
 
-app.use(
-    session({
-        resave: false,
-        saveUninitialized: false,
-        secret: process.env.SECRET_KEY,
-
-        cookie: {
-            httpOnly: true,
-            secure: false,
-            maxAge: 1000 * 60 * 60 * 24
-        },
-    })
-);
-
 app.use(passport.initialize());
-app.use(passport.session());
 
 app.use("/auth", authRoutes); 
 app.use("/api/sessions", sessionRoutes); 
