@@ -22,6 +22,10 @@ const contactSchema = new Schema({
     required: true,
     trim: true,
   },
+  status: {
+    type: String,
+    default: "Received"
+  }
 });
 
 const Contact = mongoose.model("Contact", contactSchema);
