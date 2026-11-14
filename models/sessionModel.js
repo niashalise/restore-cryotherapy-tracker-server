@@ -13,7 +13,8 @@ const sessionSchema = new Schema({
     },
     clientId: {
         type: Schema.Types.ObjectId,
-        ref: "Client"
+        ref: "Client",
+        required: true
     },
     settings: {
         type: String,
