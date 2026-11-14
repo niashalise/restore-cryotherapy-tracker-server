@@ -13,7 +13,8 @@ const getAllSessions = async (req, res, next) => {
     const sessions = await Session.find({
       tenantId: req.tenant._id,
       date: { $gte: startDate, $lte: endDate },
-    }); //
+    })
+    .populate("clientId", "firstName lastName phone"); //
 
     return res.status(200).json({
       success: {
@@ -27,19 +28,85 @@ const getAllSessions = async (req, res, next) => {
   }
 };
 
+const getSessionByDate = async (req, res, next) => {
+  try {
+    const { date, clientId } = req.query;
+    if (!date || !clientId ) {
+      throw new Error("Id or date is missing.");
+    };
+
+    const [year, month, day] = date.split("-").map(Number);
+    const startDate = new Date(year, month - 1, day, 0, 0, 0);
+    const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    console.log("Start date: ", startDate);
+    console.log("End date: ", endDate);
+    const sessions = await Session.find({
+      date: { $gte: startDate, $lte: endDate },
+      clientId
+    })
+    .populate("clientId", "firstName lastName phone");
+    res.status(200).json({
+      success: { message: "Retrieved sessions." },
+      data: { sessions },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getClientByPhoneNumber = async (req, res, next) => {
+    const { phone } = req.query;
+    try {
+        const foundClient = await Client.find({ phone });
+
+        res.status(200).json({
+            success: { message: "Found client."},
+            data: { foundClient },
+            statusCode: 200
+        })
+    } catch (error) {
+        return next(error)
+    }
+}
+
+const getLocationSessionsByDate = async (req, res, next) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      throw new Error("Date is invalid or missing.");
+    };
+
+    const [year, month, day] = date.split("-").map(Number);
+    const startDate = new Date(year, month - 1, day, 0, 0, 0);
+    const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    const sessions = await Session.find({
+      date: { $gte: startDate, $lte: endDate},
+      tenantId: req.tenant._id
+    })
+    .populate("clientId", "firstName lastName phone")
+    .sort({ date: 1 });
+    res.status(200).json({
+      success: { message: "Retrieved sessions." },
+      data: { sessions },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 const getClientSessions = async (req, res, next) => {
-  const { phone } = req.query;
+  const { clientId } = req.query;
 
   try {
-    if (!phone) {
+    if (!clientId) {
       throw new Error("Id is required");
     }
 
-    const sessions = await Session.find({ phone }); 
-
-    if (!sessions) {
-      throw new Error("Client not found");
-    }
+    const sessions = await Session.find({ clientId })
+    .populate("tenantId", "displayName")
+    .sort({date: -1}); 
 
     return res.status(200).json({
       success: {
@@ -102,9 +169,7 @@ const createClient = async (req, res, next) => {
 const createSession = async (req, res, next) => {
   const {
     date,
-    machine,
-    name,
-    phone,
+    machineType,
     clientId,
     settings,
     startingTemp,
@@ -113,15 +178,18 @@ const createSession = async (req, res, next) => {
   } = req.body;
 
   try {
-    if (!date || !name || !phone || !settings || !startingTemp || !endingTemp) {
+    if (!date || !clientId || !settings || !startingTemp || !endingTemp) {
       throw new Error("Missing required fields, please review.");
     }
 
+    const client = await Client.findById(clientId);
+    if (client === null) {
+        throw new Error("Client not found.");
+    };
+
     const newSession = new Session({
       date,
-      machine,
-      name,
-      phone,
+      machineType,
       clientId,
       settings,
       startingTemp,
@@ -144,46 +212,7 @@ const createSession = async (req, res, next) => {
   }
 };
 
-const getSessionByDate = async (req, res, next) => {
-  try {
-    const { date, phone } = req.query;
-    if (!date || !phone ) {
-      throw new Error("Phone number or date is missing.");
-    };
 
-    const [year, month, day] = date.split("-").map(Number);
-    const startDate = new Date(year, month - 1, day, 0, 0, 0);
-    const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-
-    console.log("Start date: ", startDate);
-    console.log("End date: ", endDate);
-    const sessions = await Session.find({
-      date: { $gte: startDate, $lte: endDate },
-      phone
-    });
-    res.status(200).json({
-      success: { message: "Retrieved sessions." },
-      data: { sessions },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-const getClientByPhoneNumber = async (req, res, next) => {
-    const { phone } = req.query;
-    try {
-        const foundClient = await Client.find({ phone });
-
-        res.status(200).json({
-            success: { message: "Found client."},
-            data: { foundClient },
-            statusCode: 200
-        })
-    } catch (error) {
-        return next(error)
-    }
-}
 
 module.exports = {
   getAllSessions,
@@ -191,5 +220,6 @@ module.exports = {
   createSession,
   getSessionByDate,
   createClient,
-  getClientByPhoneNumber
+  getClientByPhoneNumber,
+  getLocationSessionsByDate
 };
