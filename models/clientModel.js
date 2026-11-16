@@ -21,8 +21,9 @@ const clientSchema = new Schema({
   phone: {
     type: String,
     required: true,
-    minLength: 10,
     trim: true,
+    unique: true,
+    match: [/^\d{10}$/, "Phone number must be 10 digits"],
   },
   dob: {
     type: Date,
