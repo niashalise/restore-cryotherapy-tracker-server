@@ -1,6 +1,12 @@
 const Session = require("../models/sessionModel");
 const Client = require("../models/clientModel");
 
+const normalizePhone = (phone) => {
+  const cleanPhone = String(phone).replace(/\D/g, "");
+
+  return cleanPhone;
+}
+
 const getAllSessions = async (req, res, next) => {
   try {
     const today = new Date();
@@ -14,7 +20,8 @@ const getAllSessions = async (req, res, next) => {
       tenantId: req.tenant._id,
       date: { $gte: startDate, $lte: endDate },
     })
-    .populate("clientId", "firstName lastName phone"); //
+    .populate("clientId", "firstName lastName phone")
+    .sort({ date: 1 });
 
     return res.status(200).json({
       success: {
@@ -39,13 +46,11 @@ const getSessionByDate = async (req, res, next) => {
     const startDate = new Date(year, month - 1, day, 0, 0, 0);
     const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-    console.log("Start date: ", startDate);
-    console.log("End date: ", endDate);
     const sessions = await Session.find({
       date: { $gte: startDate, $lte: endDate },
       clientId
     })
-    .populate("clientId", "firstName lastName phone");
+    .populate("tenantId", "displayName");
     res.status(200).json({
       success: { message: "Retrieved sessions." },
       data: { sessions },
@@ -58,13 +63,21 @@ const getSessionByDate = async (req, res, next) => {
 const getClientByPhoneNumber = async (req, res, next) => {
     const { phone } = req.query;
     try {
-        const foundClient = await Client.find({ phone });
-
-        res.status(200).json({
-            success: { message: "Found client."},
-            data: { foundClient },
-            statusCode: 200
+      const cleanPhone = normalizePhone(phone);
+      if (cleanPhone.length !== 10) {
+        return res.status(400).json({
+          error: { message: "Phone number must be 10 digits." },
+          statusCode: 400,
         })
+      }
+
+      const foundClient = await Client.find({ phone: cleanPhone }).select("firstName lastName phone");
+
+      res.status(200).json({
+        success: { message: "Found client." },
+        data: { foundClient },
+        statusCode: 200,
+      });
     } catch (error) {
         return next(error)
     }
@@ -135,15 +148,22 @@ const createClient = async (req, res, next) => {
   } = req.body;
 
   try {
-    if (!firstName || !lastName || !email || !dob || !phone || !dob) {
+    if (!firstName || !lastName || !email || !dob || !phone) {
       throw new Error("Missing required fields, please review.");
+    }
+    const cleanPhone = normalizePhone(phone);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({
+        error: { message: "Phone number must be 10 digits." },
+        statusCode: 400,
+      });
     }
 
     const newClient = new Client({
       firstName,
       lastName,
       email,
-      phone,
+      phone: cleanPhone,
       dob,
       gender,
       address,
@@ -184,7 +204,8 @@ const createSession = async (req, res, next) => {
 
     const client = await Client.findById(clientId);
     if (client === null) {
-        throw new Error("Client not found.");
+        return res.status(404).json( {error: { message: "Client not found." },
+      statusCode: 404 })
     };
 
     const newSession = new Session({
